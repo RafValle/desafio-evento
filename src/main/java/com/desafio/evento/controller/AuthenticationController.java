@@ -2,8 +2,6 @@ package com.desafio.evento.controller;
 
 import com.desafio.evento.model.Authentication;
 import com.desafio.evento.model.LoginResponse;
-import com.desafio.evento.model.User;
-import com.desafio.evento.repository.UserRepository;
 import com.desafio.evento.security.AuthenticationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +22,7 @@ public class AuthenticationController {
     private AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid Authentication data){
+    public ResponseEntity<LoginResponse>login(@RequestBody @Valid Authentication data){
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.username(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
 

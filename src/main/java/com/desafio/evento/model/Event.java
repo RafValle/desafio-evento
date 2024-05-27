@@ -1,25 +1,21 @@
 package com.desafio.evento.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
 
-@Table(name = "event")
-@Entity(name = "event")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
+@Entity
+@Data
 public class Event {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
     private Date date;
     private String location;
     private int capacity;
+
 }
