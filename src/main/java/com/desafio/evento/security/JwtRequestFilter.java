@@ -2,6 +2,7 @@ package com.desafio.evento.security;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.desafio.evento.config.exceptions.CustomException;
 import com.desafio.evento.model.User;
 import com.desafio.evento.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -9,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -45,16 +47,17 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "User does not have permission");
-                    return;
+                    throw new CustomException(HttpStatus.FORBIDDEN, "User does not have permission");
                 }
-            } catch (RuntimeException  e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
-                return;
+            } catch (TokenExpiredException e) {
+                throw new CustomException(HttpStatus.UNAUTHORIZED, "Token expired");
+            } catch (JWTVerificationException e) {
+                throw new CustomException(HttpStatus.UNAUTHORIZED, "Invalid token");
             }
         }
         filterChain.doFilter(request, response);
     }
+
     private String recoverToken(HttpServletRequest request) {
         final String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {

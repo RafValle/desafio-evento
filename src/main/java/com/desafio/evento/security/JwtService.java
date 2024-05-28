@@ -6,11 +6,14 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.desafio.evento.config.exceptions.CustomException;
+import com.desafio.evento.config.exceptions.EventFullException;
 import com.desafio.evento.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,7 +36,6 @@ public class JwtService {
             Instant now = Instant.now();
             long expiry = 36000L;
 
-
             String authorities = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.joining(" "));
@@ -47,7 +49,7 @@ public class JwtService {
                     .withExpiresAt(Date.from(now.plusSeconds(expiry)))
                     .sign(algorithm);
         } catch (JWTCreationException exception) {
-            throw new RuntimeException("Error while generating token", exception);
+            throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while generating token");
         }
     }
 
@@ -58,8 +60,10 @@ public class JwtService {
                     .withIssuer("auth-api")
                     .build();
             return verifier.verify(token).getSubject();
-        } catch (RuntimeException  ex) {
-            throw ex;
+        } catch (TokenExpiredException ex) {
+            throw new CustomException(HttpStatus.UNAUTHORIZED, "Token expired");
+        } catch (JWTVerificationException ex) {
+            throw new CustomException(HttpStatus.UNAUTHORIZED, "Invalid token");
         }
     }
 

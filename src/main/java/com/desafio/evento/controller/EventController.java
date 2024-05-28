@@ -22,8 +22,8 @@ public class EventController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<EventResponse> createEvent(@RequestBody EventRequest eventCreateDTO) {
-        EventResponse savedEvent = eventService.saveEvent(eventCreateDTO);
+    public ResponseEntity<EventResponse> createEvent(@RequestBody EventRequest eventRequest) {
+        EventResponse savedEvent = eventService.saveEvent(eventRequest);
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
@@ -32,6 +32,7 @@ public class EventController {
 
         return ResponseEntity.created(location).body(savedEvent);
     }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<List<EventResponse>> getAllEvents() {
@@ -49,8 +50,8 @@ public class EventController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<EventResponse> updateEvent(@PathVariable String id, @RequestBody EventRequest eventUpdateDTO) {
-        return eventService.updateEvent(id, eventUpdateDTO)
+    public ResponseEntity<EventResponse> updateEvent(@PathVariable String id, @RequestBody EventRequest eventRequest) {
+        return eventService.updateEvent(id, eventRequest)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -58,12 +59,14 @@ public class EventController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteEvent(@PathVariable String id) {
-        return eventService.deleteById(id);
+        eventService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/register")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Void> registerForEvent(@PathVariable String id, @RequestBody String username) {
-        return eventService.registerForEvent(id, username);
+        eventService.registerForEvent(id, username);
+        return ResponseEntity.ok().build();
     }
 }
