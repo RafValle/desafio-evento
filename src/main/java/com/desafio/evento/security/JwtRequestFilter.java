@@ -1,5 +1,7 @@
 package com.desafio.evento.security;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.desafio.evento.model.User;
 import com.desafio.evento.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -33,8 +35,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = recoverToken(request);
         if (token != null) {
-            String username = jwtService.validateToken(token);
-            if (username != null && !username.isEmpty()) {
+            try {
+                String username = jwtService.validateToken(token);
                 Optional<User> userOptional = userRepository.findByUsername(username);
                 if (userOptional.isPresent()) {
                     UserDetails userDetails = userOptional.get();
@@ -42,14 +44,22 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                             userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "User does not have permission");
+                    return;
                 }
+            } catch (RuntimeException  e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
+                return;
             }
         }
         filterChain.doFilter(request, response);
     }
-    private String recoverToken(HttpServletRequest request){
-        var authHeader = request.getHeader("Authorization");
-        if(authHeader == null) return null;
-        return authHeader.replace("Bearer ", "");
+    private String recoverToken(HttpServletRequest request) {
+        final String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring(7);
+        }
+        return null;
     }
 }

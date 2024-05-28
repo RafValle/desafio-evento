@@ -20,6 +20,7 @@ public class UserController {
     @Autowired
     private UserService userService;
     @PostMapping("/register")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> login(@RequestBody @Valid RegisterRequest request){
         var user = userService.saveUser(request);
         URI location = ServletUriComponentsBuilder
