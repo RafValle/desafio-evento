@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.desafio.evento.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -29,6 +30,10 @@ public class JwtService {
     private String secretKey;
     public String generateToken(Authentication authentication){
         try{
+            Instant now = Instant.now();
+            long expiry = 36000L;
+
+
             String authorities = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.joining(" "));
@@ -37,42 +42,24 @@ public class JwtService {
             return JWT.create()
                     .withIssuer("auth-api")
                     .withSubject(authentication.getName())
-                    .withExpiresAt(genExpirationDate())
                     .withClaim("authorities", authorities)
+                    .withIssuedAt(Date.from(now))
+                    .withExpiresAt(Date.from(now.plusSeconds(expiry)))
                     .sign(algorithm);
         } catch (JWTCreationException exception) {
             throw new RuntimeException("Error while generating token", exception);
         }
     }
 
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(secretKey.getBytes())
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-    public String validateToken(String token) {
+    public String validateToken(String token) throws TokenExpiredException, JWTVerificationException {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secretKey);
             JWTVerifier verifier = JWT.require(algorithm)
                     .withIssuer("auth-api")
                     .build();
             return verifier.verify(token).getSubject();
-        } catch (JWTVerificationException exception) {
-            return null;
+        } catch (RuntimeException  ex) {
+            throw ex;
         }
     }
 
@@ -88,7 +75,8 @@ public class JwtService {
         }
     }
 
-    private Instant genExpirationDate(){
-        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+    public boolean validateToken(String token, UserDetails userDetails) {
+        String username = extractUsername(token);
+        return username != null && username.equals(userDetails.getUsername());
     }
 }
