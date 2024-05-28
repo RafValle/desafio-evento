@@ -2,6 +2,8 @@ package com.desafio.evento.controller;
 
 import com.desafio.evento.model.User;
 import com.desafio.evento.model.request.RegisterRequest;
+import com.desafio.evento.model.response.EventResponse;
+import com.desafio.evento.model.response.UserResponse;
 import com.desafio.evento.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +34,17 @@ public class UserController {
         return ResponseEntity.created(location).build();
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<UserResponse> getEventById(@PathVariable String id) {
+        return userService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping()
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getUsers(){
+    public ResponseEntity<List<UserResponse>> getUsers(){
         var user = userService.findAll();
         return ResponseEntity.ok(user);
     }

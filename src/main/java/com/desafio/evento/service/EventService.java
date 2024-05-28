@@ -1,17 +1,19 @@
 package com.desafio.evento.service;
 
+import com.desafio.evento.config.exceptions.EventFullException;
+import com.desafio.evento.config.exceptions.EventNotFoundException;
 import com.desafio.evento.model.Event;
 import com.desafio.evento.model.request.EventRequest;
 import com.desafio.evento.model.response.EventResponse;
 import com.desafio.evento.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class EventService {
@@ -36,12 +38,13 @@ public class EventService {
     }
 
     public Optional<EventResponse> findById(String id) {
-        return eventRepository.findById(id)
-                .map(this::convertToDTO);
+        return Optional.ofNullable(eventRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id)));
     }
 
     public Optional<EventResponse> updateEvent(String id, EventRequest eventUpdateDTO) {
-        return eventRepository.findById(id)
+        return Optional.ofNullable(eventRepository.findById(id)
                 .map(existingEvent -> {
                     existingEvent.setName(eventUpdateDTO.getName());
                     existingEvent.setDate(eventUpdateDTO.getDate());
@@ -49,33 +52,25 @@ public class EventService {
                     existingEvent.setMaxParticipants(eventUpdateDTO.getMaxParticipants());
                     Event updatedEvent = eventRepository.save(existingEvent);
                     return convertToDTO(updatedEvent);
-                });
+                }).orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id)));
     }
 
-    public ResponseEntity<Void> deleteById(String id) {
-        eventRepository.findById(id)
-                .map(existingEvent -> {
-                    eventRepository.deleteById(id);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
-
-        return null;
-    }
-
-    public ResponseEntity<Void> registerForEvent(String eventId, String username) {
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isPresent()) {
-            Event event = eventOptional.get();
-            if (event.isFull()) {
-                return ResponseEntity.badRequest().build();
-            }
-            event.getParticipants().add(username);
-            eventRepository.save(event);
-            return ResponseEntity.ok().build();
+    public void deleteById(String id) {
+        if (eventRepository.existsById(id)) {
+            eventRepository.deleteById(id);
         } else {
-            return ResponseEntity.notFound().build();
+            throw new EventNotFoundException("Event not found with id: " + id);
         }
+    }
+
+    public void registerForEvent(String eventId, String username) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+        if (event.isFull()) {
+            throw new EventFullException("Event has reached maximum capacity of participants.");
+        }
+        event.getParticipants().add(username);
+        eventRepository.save(event);
     }
 
     private EventResponse convertToDTO(Event event) {

@@ -2,16 +2,20 @@ package com.desafio.evento.config.exceptions;
 
 import org.springframework.http.HttpStatus;
 
-public class AppException extends RuntimeException {
-
+public class CustomException extends RuntimeException {
     private final HttpStatus status;
 
-    public AppException(String message, HttpStatus status) {
+    public CustomException(HttpStatus status, String message) {
         super(message);
         this.status = status;
     }
 
     public HttpStatus getStatus() {
         return status;
+    }
+
+    @Override
+    public String getMessage() {
+        return super.getMessage();
     }
 }
