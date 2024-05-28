@@ -1,6 +1,7 @@
 package com.desafio.evento.service;
 
 import com.desafio.evento.model.User;
+import com.desafio.evento.model.UserRole;
 import com.desafio.evento.model.request.RegisterRequest;
 import com.desafio.evento.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +22,13 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public User saveUser(RegisterRequest user) {
-        User newUser = User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .role(user.getRole())
-                .build();
-        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(newUser);
+    public User saveUser(RegisterRequest request) {
+        User user = new User(
+                request.getUsername(),
+                passwordEncoder.encode(request.getPassword()),
+                UserRole.valueOf(String.valueOf(request.getRole()))
+        );
+        return userRepository.save(user);
     }
 
     public Optional<User> findByUsername(String username) {

@@ -2,6 +2,7 @@ package com.desafio.evento.controller;
 
 import com.desafio.evento.model.Authentication;
 import com.desafio.evento.model.LoginResponse;
+
 import com.desafio.evento.security.AuthenticationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

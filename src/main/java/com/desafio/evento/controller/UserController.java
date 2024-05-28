@@ -6,6 +6,7 @@ import com.desafio.evento.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -31,7 +32,8 @@ public class UserController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<User>> login(){
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<User>> getUsers(){
         var user = userService.findAll();
         return ResponseEntity.ok(user);
     }

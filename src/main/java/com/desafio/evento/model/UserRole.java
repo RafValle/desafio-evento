@@ -1,16 +1,13 @@
 package com.desafio.evento.model;
 
-public enum UserRole {
-    ADMIN("admin"),
-    USER("user");
+import org.springframework.security.core.GrantedAuthority;
 
-    private String role;
+public enum UserRole implements GrantedAuthority {
+    ADMIN,
+    USER;
 
-    UserRole(String role){
-        this.role = role;
-    }
-
-    public String getRole(){
-        return role;
+    @Override
+    public String getAuthority() {
+        return this.name();
     }
 }
