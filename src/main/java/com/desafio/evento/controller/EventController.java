@@ -64,9 +64,16 @@ public class EventController {
     }
 
     @PostMapping("/{id}/register")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Void> registerForEvent(@PathVariable String id, @RequestBody String username) {
-        eventService.registerForEvent(id, username);
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<Void> registerForEvent(@PathVariable String id, @RequestParam String userId) {
+        eventService.registerForEvent(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/unregister")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<Void> unregisterFromEvent(@PathVariable String id, @RequestParam String userId) {
+        eventService.unregisterFromEvent(id, userId);
         return ResponseEntity.ok().build();
     }
 }

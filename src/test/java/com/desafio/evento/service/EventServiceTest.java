@@ -3,10 +3,12 @@ package com.desafio.evento.service;
 import com.desafio.evento.config.exceptions.EventFullException;
 import com.desafio.evento.config.exceptions.EventNotFoundException;
 import com.desafio.evento.model.Event;
+import com.desafio.evento.model.User;
+import com.desafio.evento.model.UserRole;
 import com.desafio.evento.model.request.EventRequest;
 import com.desafio.evento.model.response.EventResponse;
 import com.desafio.evento.repository.EventRepository;
-import org.junit.jupiter.api.Assertions;
+import com.desafio.evento.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -29,6 +31,9 @@ class EventServiceTest {
 
     @Mock
     private EventRepository eventRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -152,17 +157,26 @@ class EventServiceTest {
     @Test
     void testRegisterForEvent() {
         String eventId = "1";
+        String userId = "1";
         String username = "user";
+
+        User user = new User();
+        user.setPassword("password");
+        user.setUsername(username);
+        user.setId(userId);
+        user.setRole(UserRole.ADMIN);
+
         Event event = new Event();
         event.setName("Conference");
         event.setId(eventId);
         event.setMaxParticipants(10);
-        event.setParticipants(new ArrayList<>(Collections.singletonList(username)));
+        event.setParticipants(new ArrayList<>(Collections.singletonList(user)));
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(eventRepository.save(any(Event.class))).thenReturn(event);
 
-        eventService.registerForEvent(eventId, username);
+        eventService.registerForEvent(eventId, userId);
 
         verify(eventRepository, times(1)).save(event);
     }
@@ -170,24 +184,97 @@ class EventServiceTest {
     @Test
     void testRegisterForEventFull() {
         String eventId = "1";
+        String userId = "1";
         String username = "user";
+
+        User user = new User();
+        user.setPassword("password");
+        user.setUsername(username);
+        user.setId(userId);
+        user.setRole(UserRole.ADMIN);
+
         Event event = new Event();
         event.setId(eventId);
         event.setMaxParticipants(1);
-        event.setParticipants(Collections.singletonList(username));
+        event.setParticipants(Collections.singletonList(user));
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-        assertThrows(EventFullException.class, () -> eventService.registerForEvent(eventId, username));
+        assertThrows(EventFullException.class, () -> eventService.registerForEvent(eventId, userId));
     }
 
     @Test
     void testRegisterForEventNotFound() {
         String eventId = "1";
-        String username = "user";
+        String userId = "1";
+
+        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+
+        assertThrows(EventNotFoundException.class, () -> eventService.registerForEvent(eventId, userId));
+    }
+
+    @Test
+    void testUnregisterFromEvent() {
+        String eventId = "1";
+        String userId = "1";
+        Event event = new Event();
+        event.setId(eventId);
+
+        User user = new User();
+        user.setId(userId);
+
+        List<User> users = new ArrayList<>();
+        users.add(user);
+        event.setParticipants(users);
+
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        eventService.unregisterFromEvent(eventId, userId);
+
+        verify(eventRepository, times(1)).save(event);
+    }
+
+
+    @Test
+    void testUnregisterFromEvent_UserNotFound() {
+        String eventId = "1";
+        String userId = "1";
+        Event event = new Event();
+        event.setId(eventId);
+
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThrows(EventNotFoundException.class, () -> eventService.unregisterFromEvent(eventId, userId));
+    }
+
+    @Test
+    void testUnregisterFromEvent_EventNotFound() {
+        String eventId = "1";
+        String userId = "1";
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 
-        assertThrows(EventNotFoundException.class, () -> eventService.registerForEvent(eventId, username));
+        assertThrows(EventNotFoundException.class, () -> eventService.unregisterFromEvent(eventId, userId));
+    }
+
+    @Test
+    void testUnregisterFromEvent_UserNotRegistered() {
+        String eventId = "1";
+        String userId = "1";
+        Event event = new Event();
+        event.setId(eventId);
+
+        User user = new User();
+        user.setId(userId);
+
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThrows(NullPointerException.class, () -> eventService.unregisterFromEvent(eventId, userId));
     }
 }

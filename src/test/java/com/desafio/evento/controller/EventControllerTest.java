@@ -11,7 +11,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.net.URI;
 import java.time.LocalDate;
@@ -33,6 +36,42 @@ class EventControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testCreateEvent() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        EventRequest eventRequest = EventRequest.builder()
+                .name("Conference")
+                .date(LocalDate.now())
+                .location("Conference Hall")
+                .maxParticipants(100)
+                .build();
+        EventResponse eventResponse = EventResponse.builder()
+                .id("1")
+                .name("Conference")
+                .date(LocalDate.now())
+                .location("Conference Hall")
+                .maxParticipants(100)
+                .build();
+
+        when(eventService.saveEvent(any(EventRequest.class))).thenReturn(eventResponse);
+
+        ResponseEntity<EventResponse> response = eventController.createEvent(eventRequest);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(eventResponse.getId(), response.getBody().getId());
+
+        URI location = response.getHeaders().getLocation();
+        assertNotNull(location);
+        assertTrue(location.toString().contains(eventResponse.getId()));
+
+        verify(eventService, times(1)).saveEvent(any(EventRequest.class));
     }
 
     @Test
@@ -147,15 +186,40 @@ class EventControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = {"ADMIN", "USER"})
     void testRegisterForEvent() {
-        doNothing().when(eventService).registerForEvent("1", "user");
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
-        ResponseEntity<Void> response = eventController.registerForEvent("1", "user");
+        String eventId = "1";
+        String userId = "1";
+
+        doNothing().when(eventService).registerForEvent(eventId, userId);
+
+        ResponseEntity<Void> response = eventController.registerForEvent(eventId, userId);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
-        verify(eventService, times(1)).registerForEvent("1", "user");
+        verify(eventService, times(1)).registerForEvent(eventId, userId);
+    }
+
+    @Test
+    @WithMockUser(roles = {"ADMIN"})
+    void testUnregisterFromEvent() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        String eventId = "1";
+        String userId = "1";
+
+        doNothing().when(eventService).unregisterFromEvent(eventId, userId);
+
+        ResponseEntity<Void> response = eventController.unregisterFromEvent(eventId, userId);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        verify(eventService, times(1)).unregisterFromEvent(eventId, userId);
     }
 }

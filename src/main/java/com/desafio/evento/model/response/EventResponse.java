@@ -1,5 +1,6 @@
 package com.desafio.evento.model.response;
 
+import com.desafio.evento.model.UserDTO;
 import jakarta.persistence.ElementCollection;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,6 @@ public class EventResponse {
     private String location;
     private int maxParticipants;
     @ElementCollection
-    private List<String> participants;
+    private List<UserDTO> participants;
 
 }

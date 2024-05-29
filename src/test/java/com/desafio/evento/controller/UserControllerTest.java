@@ -4,7 +4,6 @@ import com.desafio.evento.model.UserRole;
 import com.desafio.evento.model.request.RegisterRequest;
 import com.desafio.evento.model.response.UserResponse;
 import com.desafio.evento.service.UserService;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -12,8 +11,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +39,36 @@ class UserControllerTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testRegisterUser() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        RegisterRequest registerRequest = RegisterRequest.builder()
+                .username("user")
+                .password("password")
+                .role(UserRole.ADMIN)
+                .build();
+        UserResponse userResponse = UserResponse.builder()
+                .id("1")
+                .username("user")
+                .role("USER")
+                .build();
+
+        when(userService.saveUser(any(RegisterRequest.class))).thenReturn(userResponse);
+
+        ResponseEntity<Void> response = userController.login(registerRequest);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+
+        URI location = response.getHeaders().getLocation();
+        assertNotNull(location);
+        assertTrue(location.toString().contains(userResponse.getId()));
+
+        verify(userService, times(1)).saveUser(any(RegisterRequest.class));
+    }
 
     @Test
     @WithMockUser(roles = {"ADMIN", "USER"})

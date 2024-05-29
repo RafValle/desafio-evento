@@ -22,11 +22,11 @@ public class Event {
     private String name;
     private LocalDate date;
     private String location;
+
+    @ManyToMany
+    private List<User> participants;
+
     private int maxParticipants;
-
-    @ElementCollection
-    private List<String> participants;
-
     public boolean isFull() {
         return participants.size() >= maxParticipants;
     }

@@ -133,12 +133,17 @@ curl --location --request DELETE 'http://localhost:8080/events/{eventId}' \
 #### Inscrever-se em Evento (USER)
 
 \`\`\`sh
-curl --location --request POST 'http://localhost:8080/events/{eventId}/register' \
---header 'Authorization: Bearer <TOKEN>' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "username": "username"
-}'
+curl -X POST "http://localhost:8080/events/{id}/register?userId=1" \
+-H "Authorization: Bearer YOUR_JWT_TOKEN" \
+-H "Content-Type: application/json"
+
+\`\`\`
+
+#### Remover um Usuário de um Evento
+\`\`\`sh
+curl -X DELETE "http://localhost:8080/events/{id}/unregister?userId=1" \
+-H "Authorization: Bearer YOUR_JWT_TOKEN" \
+-H "Content-Type: application/json"
 \`\`\`
 
 ## Estrutura do Projeto
