@@ -130,7 +130,7 @@ curl --location --request DELETE 'http://localhost:8080/events/{eventId}' \
 --header 'Authorization: Bearer <TOKEN>'
 \`\`\`
 
-#### Inscrever-se em Evento (USER)
+#### Inscrever-se em Evento (ADMIN e USER)
 
 \`\`\`sh
 curl -X POST "http://localhost:8080/events/{id}/register?userId=1" \
@@ -139,7 +139,7 @@ curl -X POST "http://localhost:8080/events/{id}/register?userId=1" \
 
 \`\`\`
 
-#### Remover um Usuário de um Evento
+#### Remover um Usuário de um Evento  (ADMIN)
 \`\`\`sh
 curl -X DELETE "http://localhost:8080/events/{id}/unregister?userId=1" \
 -H "Authorization: Bearer YOUR_JWT_TOKEN" \
